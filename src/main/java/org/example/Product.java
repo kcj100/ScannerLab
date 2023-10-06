@@ -1,5 +1,7 @@
 package org.example;
 
+import java.nio.charset.StandardCharsets;
+
 public class Product {
     private String product;
     private int qty;
@@ -45,8 +47,9 @@ public class Product {
         this.miles = miles;
     }
 
-    public double getTotal() {
-        return qty * price + calculateFeeByMiles();
+    public String getTotal() {
+        double total = qty * price + calculateFeeByMiles();
+        return "$" + String.format("%.2f", total);
     }
 
     private double calculateFeeByMiles() {
@@ -75,10 +78,11 @@ public class Product {
             for (int i = 0; i < s.length(); i++) {
                 dividers.append("-");
             }
-            counter++;
+
             if (counter < headers.length) {
                 dividers.append("\t");
             }
+            counter++;
         }
         return dividers.toString();
     }
@@ -98,7 +102,7 @@ public class Product {
              how many spaces that will be added will be according to the difference
              between value's current length and divider's current length
             */
-            if (divider.length() < values[counter].length()) {
+            if (divider.length() <= values[counter].length()) {
                 spacesCount = values[counter].length() - divider.length();
             } else {
                 // else how spaces that will be added will be determined by divider.length
@@ -111,7 +115,9 @@ public class Product {
              are added account for the divider.length, as remainder will be different
              most of the time as divider.length decreases and increases in value
             */
-            spacesCount = divider.length() % spacesCount;
+            if (spacesCount > 0) {
+                spacesCount = divider.length() % spacesCount;
+            }
             StringBuilder spaces = new StringBuilder();
 
             // add spaces to spaces according to spacesCount
@@ -131,37 +137,74 @@ public class Product {
         return valuesBuilder.toString();
     }
 
-//    private String processHeaders(String[] headers, String[] values) {
-//        StringBuilder headersBuilder = new StringBuilder();
-//        for (int i = 0; i < headers.length; i++) {
-//            if (headers[i].length() < values[i].length()) {
-//
-//            }
-//        }
-//    }
+    private String processHeaders(String[] headers, String[] values) {
+        StringBuilder headersBuilder = new StringBuilder();
+        int spacesCount = 0;
+        for (int i = 0; i < headers.length; i++) {
+            if (headers[i].length() <= values[i].length()) {
+                spacesCount = values[i].length() - headers[i].length();
+            } else {
+                // else how spaces that will be added will be determined by divider.length
+                // divided by 2
+                spacesCount = headers[i].length() / 2;
+            }
+            /*
+             further processing to use the remainder of divider.length % spacesCount
+             to serve as the new spacesCount value, to ensure number of spaces that
+             are added account for the divider.length, as remainder will be different
+             most of the time as divider.length decreases and increases in value
+            */
+            if(spacesCount > 0) {
+                spacesCount = headers[i].length() % spacesCount;
+            }
+            StringBuilder spaces = new StringBuilder();
+
+            // add spaces to spaces according to spacesCount
+            for (int j = 0; j < spacesCount; j++) {
+                spaces.append(" ");
+            }
+            if (i == 0) {
+                headersBuilder.append(headers[i]).append("\t");
+            } else {
+                headersBuilder.append(spaces).append(headers[i]).append("\t");
+            }
+
+            // tab added after appending current value in array to headersBuilder
+        }
+
+
+        return headersBuilder.toString();
+    }
+
 
     @Override
     public String toString() {
         StringBuilder headers = new StringBuilder();
         StringBuilder dividers = new StringBuilder();
         StringBuilder values = new StringBuilder();
+        String formattedPrice = "$" + String.format("%.2f",price);
+
+        values.append(product + "\t" + qty + "\t" + formattedPrice + "\t" + miles + "\t" + getTotal());
         headers.append("Product\t")
                 .append("Qty\t")
                 .append("Price\t")
                 .append("Miles\t")
                 .append("Total");
 
-        // generate new dividers from processDividers method
-        dividers.append(processDividers(headers.toString().split("\t")));
-        values.append(product + "\t" + qty + "\t" + price + "\t" + miles + "\t" + getTotal());
 
+        // generate new dividers from processDividers method
+
+        StringBuilder newHeaders = new StringBuilder(
+                processHeaders(headers.toString().split("\\s+")
+                        , values.toString().split("\\s+")));
+        dividers.append(processDividers(newHeaders.toString().split("\t")));
         /*
          create newValues with correct amount of spaces based on values and dividers
          length after splitting by tab
         */
         StringBuilder newValues = new StringBuilder(
-                processSpacesForValues(dividers.toString().split("\t"),
-                        values.toString().split("\t")));
-        return headers.toString() + "\n" + dividers.toString() + "\n" + newValues.toString();
+                processSpacesForValues(newHeaders.toString().split("\t"),
+                        values.toString().split("\\s+")));
+        return newHeaders.toString() + "\n" + dividers.toString() + "\n" + newValues.toString();
     }
 }
