@@ -1,6 +1,7 @@
 package org.example;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Formatter;
 
 public class Product {
     private String product;
@@ -68,143 +69,46 @@ public class Product {
         }
     }
 
-    /**
-     * return dividers as String according to each header's length
-     */
-    private String processDividers(String[] headers) {
-        StringBuilder dividers = new StringBuilder();
-        int counter = 0;
-        for (String s : headers) {
-            for (int i = 0; i < s.length(); i++) {
-                dividers.append("-");
-            }
-
-            if (counter < headers.length) {
-                dividers.append("\t");
-            }
-            counter++;
-        }
-        return dividers.toString();
-    }
-
-    private String processSpacesForValues(String[] dividers, String[] values) {
-        StringBuilder valuesBuilder = new StringBuilder();
-
-        // values length in array form will always be the same as dividers length in array form
-        // keeping track of values array index with counter
-        int counter = 0;
-
-        for (String divider : dividers) {
-            int spacesCount = 0;
-
-            /*
-              if current divider's length is less than current value's length,
-             how many spaces that will be added will be according to the difference
-             between value's current length and divider's current length
-            */
-            if (divider.length() <= values[counter].length()) {
-                spacesCount = values[counter].length() - divider.length();
-            } else {
-                // else how spaces that will be added will be determined by divider.length
-                // divided by 2
-                spacesCount = divider.length() / 2;
-            }
-            /*
-             further processing to use the remainder of divider.length % spacesCount
-             to serve as the new spacesCount value, to ensure number of spaces that
-             are added account for the divider.length, as remainder will be different
-             most of the time as divider.length decreases and increases in value
-            */
-            if (spacesCount > 0) {
-                spacesCount = divider.length() % spacesCount;
-            }
-            StringBuilder spaces = new StringBuilder();
-
-            // add spaces to spaces according to spacesCount
-            for (int i = 0; i < spacesCount; i++) {
-                spaces.append(" ");
-            }
-            if (counter == 0) {
-                valuesBuilder.append(spaces).append(values[counter]).append("\t");
-            } else {
-                valuesBuilder.append(spaces).append(values[counter]).append("\t");
-            }
-
-            // tab added after appending current value in array to valuesBuilder
-
-            counter++;
-        }
-        return valuesBuilder.toString();
-    }
-
-    private String processHeaders(String[] headers, String[] values) {
-        StringBuilder headersBuilder = new StringBuilder();
-        int spacesCount = 0;
-        for (int i = 0; i < headers.length; i++) {
-            if (headers[i].length() <= values[i].length()) {
-                spacesCount = values[i].length() - headers[i].length();
-            } else {
-                // else how spaces that will be added will be determined by divider.length
-                // divided by 2
-                spacesCount = headers[i].length() / 2;
-            }
-            /*
-             further processing to use the remainder of divider.length % spacesCount
-             to serve as the new spacesCount value, to ensure number of spaces that
-             are added account for the divider.length, as remainder will be different
-             most of the time as divider.length decreases and increases in value
-            */
-            if(spacesCount > 0) {
-                spacesCount = headers[i].length() % spacesCount;
-            }
-            StringBuilder spaces = new StringBuilder();
-
-            // add spaces to spaces according to spacesCount
-            for (int j = 0; j < spacesCount; j++) {
-                spaces.append(" ");
-            }
-            if (i == 0) {
-                headersBuilder.append(headers[i]).append("\t");
-            } else {
-                headersBuilder.append(spaces).append(headers[i]).append("\t");
-            }
-
-            // tab added after appending current value in array to headersBuilder
-        }
-
-
-        return headersBuilder.toString();
-    }
-
-
     @Override
     public String toString() {
-        StringBuilder headers = new StringBuilder();
-        StringBuilder dividers = new StringBuilder();
-        StringBuilder values = new StringBuilder();
-        String formattedPrice = "$" + String.format("%.2f",price);
+        // Define the headers and values
+        String[] headers = {"Product", "Qty", "Price", "Miles", "Total"};
+        String formattedPrice = "$" + String.format("%.2f", price);
+        String[] values = {product, String.valueOf(qty), formattedPrice, String.valueOf(miles), getTotal()};
 
-        values.append(product + "\t" + qty + "\t" + formattedPrice + "\t" + miles + "\t" + getTotal());
-        headers.append("Product\t")
-                .append("Qty\t")
-                .append("Price\t")
-                .append("Miles\t")
-                .append("Total");
+        // Calculate the maximum width for each column
+        int[] columnWidths = new int[headers.length];
+        for (int i = 0; i < headers.length; i++) {
+            columnWidths[i] = Math.max(headers[i].length(), values[i].length());
+        }
 
+        // Create a StringBuilder to build the formatted output
+        StringBuilder output = new StringBuilder();
 
-        // generate new dividers from processDividers method
+        // Append headers with dividers
+        for (int i = 0; i < headers.length; i++) {
+            Formatter headerFormatter = new Formatter();
+            headerFormatter.format("%-" + columnWidths[i] + "s", headers[i]);
+            output.append(headerFormatter).append("\t");
+            headerFormatter.close();
+        }
+        output.append("\n");
 
-        StringBuilder newHeaders = new StringBuilder(
-                processHeaders(headers.toString().split("\\s+")
-                        , values.toString().split("\\s+")));
-        dividers.append(processDividers(newHeaders.toString().split("\t")));
-        /*
-         create newValues with correct amount of spaces based on values and dividers
-         length after splitting by tab
-        */
-        StringBuilder newValues = new StringBuilder(
-                processSpacesForValues(newHeaders.toString().split("\t"),
-                        values.toString().split("\\s+")));
-        return newHeaders.toString() + "\n" + dividers.toString() + "\n" + newValues.toString();
+        // Append a row of dashes to separate headers and values
+        for (int i = 0; i < headers.length; i++) {
+            output.append("-".repeat(columnWidths[i])).append("\t");
+        }
+        output.append("\n");
+
+        // Append values
+        for (int i = 0; i < values.length; i++) {
+            Formatter valueFormatter = new Formatter();
+            valueFormatter.format("%-" + columnWidths[i] + "s", values[i]);
+            output.append(valueFormatter).append("\t");
+            valueFormatter.close();
+        }
+
+        return output.toString();
     }
+
 }
